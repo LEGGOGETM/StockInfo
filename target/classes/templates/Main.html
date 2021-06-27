@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<script th:src="@{/js/jquery-3.5.1.min.js}"></script>
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<script th:src="@{/js/bootstrap.min.js}"></script>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+	function loadSysMnt() {
+
+		this.source = null;
+
+		this.start = function() {
+
+			this.source = new EventSource("/test/" + '[[${stock_num}]]');
+
+			this.source
+					.addEventListener(
+							"message",
+							function(event) {
+								datastream = JSON.parse(event.data);
+								
+								//거래량으로 변화 감지
+								
+								
+								
+								
+								
+								
+								var t1 = datastream.TBL_StockInfo.CurJuka
+										.replace(/,/g, '');
+								var t2 = datastream.TBL_StockInfo.PrevJuka
+										.replace(/,/g, '');
+								var t3 = Math.abs((1 - (t1 / t2)) * 100)
+										.toFixed(2);
+								var point = "";
+
+								// 종목 퍼센트
+								switch (datastream.TBL_StockInfo.DungRak) {
+								case "1":
+								case "2":
+									t3 = "+ " + t3 + "%";
+									document.getElementById('CurJuka').style.color = "red";
+									document.getElementById('Debi').style.color = "red";
+									document.getElementById('DebiPercent').style.color = "red";
+									point = "▲ ";
+									break;
+								case "4":
+								case "5":
+									t3 = "- " + t3 + "%";
+									document.getElementById('CurJuka').style.color = "blue";
+									document.getElementById('Debi').style.color = "blue";
+									document.getElementById('DebiPercent').style.color = "blue";
+									point = "▼ ";
+									break;
+								default:
+									document.getElementById('CurJuka').style.color = "black";
+									document.getElementById('Debi').style.color = "black";
+									document.getElementById('DebiPercent').style.color = "black";
+									break;
+								}
+								document.getElementById('DebiPercent').innerText = t3; //현재가
+
+								//주가정보
+								document.getElementById('JongName').innerText = datastream.TBL_StockInfo.JongName; //종목명
+								document.getElementById('CurJuka').innerText = datastream.TBL_StockInfo.CurJuka; //현재가
+								document.getElementById('Debi').innerText = point
+										+ datastream.TBL_StockInfo.Debi;//전일대비
+								//document.getElementById('DungRak').innerText = datastream.TBL_StockInfo.DungRak;//부호처리	1 - 상한	2 - 상승 3 - 보합 4 - 하한 5 - 하락
+								//document.getElementById('PrevJuka').innerText = datastream.TBL_StockInfo.PrevJuka;//전일종가
+								document.getElementById('Volume').innerText = datastream.TBL_StockInfo.Volume;//거래량
+								document.getElementById('Money').innerText = datastream.TBL_StockInfo.Money;//거래대금
+								document.getElementById('StartJuka').innerText = datastream.TBL_StockInfo.StartJuka;//시가
+								document.getElementById('HighJuka').innerText = datastream.TBL_StockInfo.HighJuka;//고가
+								document.getElementById('LowJuka').innerText = datastream.TBL_StockInfo.LowJuka;//저가
+								document.getElementById('High52').innerText = datastream.TBL_StockInfo.High52;//52주 최고
+								document.getElementById('Low52').innerText = datastream.TBL_StockInfo.Low52;//52주 최저
+								document.getElementById('UpJuka').innerText = datastream.TBL_StockInfo.UpJuka;//상한가
+								document.getElementById('DownJuka').innerText = datastream.TBL_StockInfo.DownJuka;//하한가
+								document.getElementById('Per').innerText = datastream.TBL_StockInfo.Per;//PER
+								//document.getElementById('Amount').innerText = datastream.TBL_StockInfo.Amount;//상장주식수
+								//document.getElementById('FaceJuka').innerText = datastream.TBL_StockInfo.FaceJuka;//액면가
+
+								//회원사별거래
+								if (datastream.TBL_AskPrice.AskPrice != null) {
+									for (var askPrice = 0; askPrice < datastream.TBL_AskPrice.AskPrice.length; askPrice++) {
+										document
+												.getElementById('member_memsoMem_'
+														+ askPrice).innerText = datastream.TBL_AskPrice.AskPrice[askPrice].member_memsoMem; //매수상위 증권사
+										document
+												.getElementById('member_mesuoVol_'
+														+ askPrice).innerText = datastream.TBL_AskPrice.AskPrice[askPrice].member_mesuoVol; //매수상위 거래량
+										document
+												.getElementById('member_memdoMem_'
+														+ askPrice).innerText = datastream.TBL_AskPrice.AskPrice[askPrice].member_memdoMem; //매도상위 증권사
+										document
+												.getElementById('member_memdoVol_'
+														+ askPrice).innerText = datastream.TBL_AskPrice.AskPrice[askPrice].member_memdoVol; //매도상위 거래량
+									}
+								}
+
+								//일자별시세
+								if (datastream.TBL_DailyStock.DailyStock != null) {
+									for (var dailyStock = 0; dailyStock < datastream.TBL_DailyStock.DailyStock.length; dailyStock++) {
+										document.getElementById('day_Date_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_Date; //일자
+										document.getElementById('day_EndPrice_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_EndPrice; //종가
+										document.getElementById('day_Dungrak_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_Dungrak; //부호처리
+										document.getElementById('day_Start_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_Start; //전일대비
+										document.getElementById('day_High_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_High; //시가
+										document.getElementById('day_Low_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_Low; //고가
+										document.getElementById('day_Volume_'
+												+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_Volume; //거래량
+										document
+												.getElementById('day_getAmount_'
+														+ dailyStock).innerText = datastream.TBL_DailyStock.DailyStock[dailyStock].day_getAmount; //거래대금
+									}
+								}
+
+								//시간대별 체결가
+								if (datastream.TBL_TimeConclude.TimeConclude != null) {
+									for (var timeConclude = 0; timeConclude < datastream.TBL_TimeConclude.TimeConclude.length; timeConclude++) {
+										document.getElementById('time_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].time;//시간
+										document.getElementById('negoprice_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].negoprice;//체결가
+										document.getElementById('Dungrak_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].Dungrak;//부호처리
+										document.getElementById('Debi_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].Debi;//전일대비
+										document.getElementById('sellprice_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].sellprice;//매도호가
+										document.getElementById('buyprice_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].buyprice;//매수호가
+										document.getElementById('amount_'
+												+ timeConclude).innerText = datastream.TBL_TimeConclude.TimeConclude[timeConclude].amount;//체결량
+									}
+								}
+
+								var kospi = datastream.StockInfo.kospiJisu
+										.replace(/,/g, '');
+								var kospi_end = datastream.StockInfo.kospiJisu
+										.replace(/,/g, '')
+										- datastream.StockInfo.kospiDebi
+												.replace(/,/g, '');
+								var kospi_per = Math.abs(
+										(1 - (kospi / kospi_end)) * 100)
+										.toFixed(2);
+								var point2 = "";
+
+								// 코스피 퍼센트
+								switch (datastream.StockInfo.kospiBuho) {
+								case "1":
+								case "2":
+									kospi_per = "+ " + kospi_per + "%";
+									document.getElementById('kospiJisu').style.color = "red";
+									document.getElementById('kospiDebi').style.color = "red";
+									document.getElementById('KospiPercent').style.color = "red";
+									point2 = "▲ ";
+									break;
+								case "4":
+								case "5":
+									kospi_per = "- " + kospi_per + "%";
+									document.getElementById('kospiJisu').style.color = "blue";
+									document.getElementById('kospiDebi').style.color = "blue";
+									document.getElementById('KospiPercent').style.color = "blue";
+									point2 = "▼ ";
+									break;
+								default:
+									document.getElementById('kospiJisu').style.color = "black";
+									document.getElementById('kospiDebi').style.color = "black";
+									document.getElementById('KospiPercent').style.color = "black";
+									break;
+								}
+								document.getElementById('KospiPercent').innerText = kospi_per; //현재가
+
+								var kosdaq = datastream.StockInfo.kosdaqJisu
+										.replace(/,/g, '');
+								var kosdaq_end = datastream.StockInfo.kosdaqJisu
+										.replace(/,/g, '')
+										- datastream.StockInfo.kosdaqJisuDebi
+												.replace(/,/g, '');
+								var kosdaq_per = Math.abs(
+										(1 - (kosdaq / kosdaq_end)) * 100)
+										.toFixed(2);
+								var point3 = "";
+
+								// 코스피 퍼센트
+								switch (datastream.StockInfo.kosdaqJisuBuho) {
+								case "1":
+								case "2":
+									kosdaq_per = "+ " + kosdaq_per + "%";
+									document.getElementById('kosdaqJisu').style.color = "red";
+									document.getElementById('kosdaqJisuDebi').style.color = "red";
+									document.getElementById('KosdaqPercent').style.color = "red";
+									point3 = "▲ ";
+									break;
+								case "4":
+								case "5":
+									kosdaq_per = "- " + kosdaq_per + "%";
+									document.getElementById('kosdaqJisu').style.color = "blue";
+									document.getElementById('kosdaqJisuDebi').style.color = "blue";
+									document.getElementById('KosdaqPercent').style.color = "blue";
+									point3 = "▼ ";
+									break;
+								default:
+									document.getElementById('kosdaqJisu').style.color = "black";
+									document.getElementById('kosdaqJisuDebi').style.color = "black";
+									document.getElementById('KosdaqPercent').style.color = "black";
+									break;
+								}
+								document.getElementById('KosdaqPercent').innerText = kosdaq_per; //현재가
+
+								//주요지수
+								document.getElementById('kosdaqJisu').innerText = datastream.StockInfo.kosdaqJisu;//코스닥 종합지수
+								//document.getElementById('kosdaqJisuBuho').innerText = datastream.StockInfo.kosdaqJisuBuho;//코스닥 부호처리
+								document.getElementById('kosdaqJisuDebi').innerText = point3
+										+ datastream.StockInfo.kosdaqJisuDebi;//코스닥 전일대비
+								//document.getElementById('starJisu').innerText = datastream.stockInfo.starJisu;//코스닥 스타지수
+								//document.getElementById('starJisuBuho').innerText = datastream.stockInfo.starJisuBuho;//코스닥 스타지수 부호처리
+								//document.getElementById('starJisuDebi').innerText = datastream.stockInfo.starJisuDebi;//코스닥 스타지수 전일대비
+								//document.getElementById('jisu50').innerText = datastream.stockInfo.jisu50;//산출안함
+								//document.getElementById('jisu50Buho').innerText = datastream.stockInfo.jisu50Buho;//산출안함
+								//document.getElementById('jisu50Debi').innerText = datastream.stockInfo.jisu50Debi;//산출안함
+								document.getElementById('myNowTime').innerText = datastream.StockInfo.myNowTime;//조회일자
+								document.getElementById('myJangGubun').innerText = datastream.StockInfo.myJangGubun;//장중구분(장중, 장마감)
+								document.getElementById('myPublicPrice').innerText = datastream.StockInfo.myPublicPrice;//공모가
+								//document.getElementById('krx100Jisu').innerText = datastream.stockInfo.krx100Jisu;//KRX100지수
+								//document.getElementById('krx100buho').innerText = datastream.stockInfo.krx100buho;//부호처리
+								//document.getElementById('krx100Debi').innerText = datastream.stockInfo.krx100Debi;//전일대비
+								document.getElementById('kospiJisu').innerText = datastream.StockInfo.kospiJisu;//거래소종합지수
+								//document.getElementById('kospiBuho').innerText = datastream.StockInfo.kospiBuho;//부호처리
+								document.getElementById('kospiDebi').innerText = point2
+										+ datastream.StockInfo.kospiDebi;//전일대비
+								//document.getElementById('kospi200Jisu').innerText = datastream.StockInfo.kospi200Jisu;//거래소종합지수
+								//document.getElementById('kospi200Buho').innerText = datastream.StockInfo.kospi200Buho;//부호처리
+								//document.getElementById('kospi200Debi').innerText = datastream.StockInfo.kospi200Debi;//전일대비
+
+							});
+
+			this.source.onerror = function() {
+				this.close();
+			};
+		};
+
+		this.stop = function() {
+			this.source.close();
+
+		}
+
+	}
+
+	var datastream = null;
+
+	var sysmnt = new loadSysMnt();
+
+	window.onload = function() {
+		sysmnt.start();
+
+	};
+	window.onbeforeunload = function() {
+		sysmnt.stop();
+	}
+</script>
+</head>
+<body style="background-color: #252423" class="fw-lighter">
+	<div class="container">
+		<nav class="navbar navbar-dark"
+			style="border-bottom: 1px solid rgba(0, 0, 0, .65);">
+			<div class="container">
+				<a class="navbar-brand">test v0.1</a>
+			</div>
+		</nav>
+		<div class="row mx-0">
+			<div class="col px-0"
+				style="border-right: 1px solid rgba(0, 0, 0, .65);">
+
+				<div class="p-3"
+					style="border-bottom: 1px solid rgba(0, 0, 0, .65);">
+					<div>
+						<label class="text-white-50" th:id="JongName"></label> <label
+							class="text-white-50" th:text="'('+${stock_num}+')'"></label>
+					</div>
+					<div class="row mx-0 my-3">
+						<div class="col p-0">
+							<label class="py-0 text-start display-4 align-middle fw-bold"
+								th:id="CurJuka"></label> <label
+								class="py-0 text-start align-bottom fw-bold" th:id="DebiPercent"></label>
+
+							<div class="row mx-0">
+								<label class="py-0 text-start fw-bold" th:id="Debi"></label>
+							</div>
+							<div class="row my-2"></div>
+							<div class="row mx-0">
+								<div>
+									<label class="py-0 text-start text-white-50 "
+										th:text="'거래량'+' : '"></label> <label
+										class="py-0 text-start text-white-50 " th:id="Volume"></label>
+								</div>
+							</div>
+
+							<div class="row mx-0 my-1">
+
+								<div>
+									<label class="py-0 text-start text-white-50 "
+										th:text="'거래대금'+' : '"></label> <label
+										class="py-0 text-start text-white-50 " th:id="Money"></label>
+								</div>
+							</div>
+						</div>
+						<div class="col p-0">
+							<table
+								class="table table-bordered border-secondary mb-0 text-white-50">
+								<thead>
+									<tr>
+										<th scope="col" class="text-center">52주 최고</th>
+										<th scope="col" class="text-center">시가</th>
+										<th scope="col" class="text-center">고가</th>
+										<th scope="col" class="text-center">저가</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td scope="col" class="text-center" th:id="High52"></td>
+										<td scope="col" class="text-center" th:id="StartJuka"></td>
+										<td scope="col" class="text-center" th:id="HighJuka"></td>
+										<td scope="col" class="text-center" th:id="LowJuka"></td>
+									</tr>
+
+									<tr>
+										<th scope="col" class="text-center">52주 최저</th>
+										<th scope="col" class="text-center">상한가</th>
+										<th scope="col" class="text-center">하한가</th>
+										<th scope="col" class="text-center">PER</th>
+									</tr>
+									<tr>
+										<td scope="col" class="text-center" th:id="Low52"></td>
+										<td scope="col" class="text-center" th:id="UpJuka"></td>
+										<td scope="col" class="text-center" th:id="DownJuka"></td>
+										<td scope="col" class="text-center" th:id="Per"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col px-0">
+				<div class="p-0"
+					style="border-bottom: 1px solid rgba(0, 0, 0, .65);">
+					<div class="row mx-0">
+						<div class="col p-3"
+							style="border-right: 1px solid rgba(0, 0, 0, .65);">
+							<div>
+								<label class="text-white-50" th:text="KOSPI"></label>
+							</div>
+							<div class="my-3">
+								<label class="me-2 py-0 text-start h3 align-middle "
+									th:id="kospiJisu"></label><label class="py-0 text-start fs-6"
+									th:id="KospiPercent"></label>
+
+								<div class="row mx-0">
+									<label class="py-0 text-start " th:id="kospiDebi"></label>
+								</div>
+							</div>
+						</div>
+						<div class="col p-3">
+							<div>
+								<label class="text-white-50" th:text="KOSDAQ"></label>
+							</div>
+							<div class="my-3">
+								<label class="me-2 py-0 text-start h3 align-middle "
+									th:id="kosdaqJisu"></label> <label
+									class="py-0 text-start fs-6 " th:id="KosdaqPercent"></label>
+
+								<div class="row mx-0">
+									<label class="py-0 text-start " th:id="kosdaqJisuDebi"></label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="p-3 text-white"
+					style="border-bottom: 1px solid rgba(0, 0, 0, .65);">Custom
+					column padding</div>
+				<div class="p-3 text-white"
+					style="border-bottom: 1px solid rgba(0, 0, 0, .65);">Custom
+					column padding</div>
+			</div>
+		</div>
+
+
+
+		<h1 th:text="일자별시세"></h1>
+
+		<table class="table table-bordered">
+			<thead class="table-dark">
+				<tr>
+					<th scope="col" class="text-center">일자</th>
+					<th scope="col" class="text-center">종가</th>
+					<th scope="col" class="text-center">부호처리</th>
+					<th scope="col" class="text-center">시가</th>
+					<th scope="col" class="text-center">고가</th>
+					<th scope="col" class="text-center">저가</th>
+					<th scope="col" class="text-center">거래량</th>
+					<th scope="col" class="text-center">거래대금</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="num : ${#numbers.sequence(0,9)}">
+					<td scope="col" class="text-center" th:id="'day_Date_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_EndPrice_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_Dungrak_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_Start_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_High_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_Low_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_Volume_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'day_getAmount_'+${num}"></td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h1 th:text="회원사별거래"></h1>
+
+		<table class="table table-bordered">
+			<thead class="table-dark">
+				<tr>
+					<th scope="col" class="text-center">매수상위 증권사</th>
+					<th scope="col" class="text-center">매수상위 거래량</th>
+					<th scope="col" class="text-center">매도상위 증권사</th>
+					<th scope="col" class="text-center">매도상위 거래량</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="num : ${#numbers.sequence(0,4)}">
+					<td scope="col" class="text-center"
+						th:id="'member_memsoMem_'+${num}"></td>
+					<td scope="col" class="text-center"
+						th:id="'member_mesuoVol_'+${num}"></td>
+					<td scope="col" class="text-center"
+						th:id="'member_memdoMem_'+${num}"></td>
+					<td scope="col" class="text-center"
+						th:id="'member_memdoVol_'+${num}"></td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h1 th:text="시간대별"></h1>
+
+		<table class="table table-bordered">
+			<thead class="table-dark">
+				<tr>
+					<th scope="col" class="text-center">시간</th>
+					<th scope="col" class="text-center">체결가</th>
+					<th scope="col" class="text-center">부호처리</th>
+					<th scope="col" class="text-center">전일대비</th>
+					<th scope="col" class="text-center">매도호가</th>
+					<th scope="col" class="text-center">매수호가</th>
+					<th scope="col" class="text-center">체결량</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="num : ${#numbers.sequence(0,9)}">
+					<td scope="col" class="text-center" th:id="'time_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'negoprice_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'Dungrak_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'Debi_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'sellprice_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'buyprice_'+${num}"></td>
+					<td scope="col" class="text-center" th:id="'amount_'+${num}"></td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h1 th:text="주요지수"></h1>
+
+		<table class="table table-bordered ">
+			<thead class="table-dark">
+				<tr>
+					<th scope="col" class="text-center">코스피200 종합지수</th>
+					<th scope="col" class="text-center">코스피200 부호처리</th>
+					<th scope="col" class="text-center">코스피200 전일대비</th>
+					<th scope="col" class="text-center">조회일자</th>
+					<th scope="col" class="text-center">장중구분</th>
+					<th scope="col" class="text-center">공모가</th>
+				</tr>
+			</thead>
+			<tbody>
+
+				<tr>
+
+					<td scope="col" class="text-center" th:id="kospi200Jisu"></td>
+					<td scope="col" class="text-center" th:id="kospi200Buho"></td>
+					<td scope="col" class="text-center" th:id="kospi200Debi"></td>
+
+					<td scope="col" class="text-center" th:id="myNowTime"></td>
+					<td scope="col" class="text-center" th:id="myJangGubun"></td>
+					<td scope="col" class="text-center" th:id="myPublicPrice"></td>
+
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+</html>
